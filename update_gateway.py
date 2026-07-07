@@ -188,10 +188,16 @@ def should_update_filter(filter_config: Dict, cached_rules: List[Dict]) -> tuple
         logger.info(f"  🔔 Version changed: {cached_version} → {current_version}")
         return True, current_version, "Version changed"
     
-    # Check if precedence matches
+    # Check if precedence matches (accounting for auto-bump when the
+    # configured precedence is occupied by another rule)
     target_precedence = filter_config.get('priority')
     current_precedence = policy.get('precedence')
-    
+
+    if target_precedence is not None:
+        taken = {rule.get('precedence') for rule in cached_rules if rule['name'] != policy_name}
+        while target_precedence in taken:
+            target_precedence += 1
+
     if target_precedence is not None and current_precedence != target_precedence:
         logger.info(f"  ⚠️ Precedence mismatch: {current_precedence} (current) ≠ {target_precedence} (target)")
         return True, current_version, f"Precedence mismatch ({current_precedence} -> {target_precedence})"
@@ -521,7 +527,16 @@ def update_policy_for_filter(filter_config: Dict, final_list_ids: List[str],
     # Build traffic expression
     expression = " or ".join([f"any(dns.domains[*] in ${lid})" for lid in final_list_ids])
     priority = filter_config.get('priority', 99)
-    
+
+    # Avoid 409 "A rule with this precedence already exists": if another rule
+    # already occupies the target precedence, bump to the next free slot.
+    taken = {rule.get('precedence') for rule in cached_rules if rule['name'] != policy_name}
+    if priority in taken:
+        original = priority
+        while priority in taken:
+            priority += 1
+        logger.warning(f"⚠️ Precedence {original} already taken by another rule, using {priority} instead")
+
     # Build description with version info
     description = build_description_with_version(
         filter_name, 
