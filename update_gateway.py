@@ -58,9 +58,9 @@ session.headers.update(headers)
 # 10000+: Hagezi filters (ordered by importance)
 blocklists: List[Dict[str, str]] = [
     {
-        "name": "Hagezi Pro++",
-        "url": "https://github.com/hydroakri/dnscrypt-proxy-blocklist/releases/latest/download/blocklist.txt",
-        "backup_url": "https://cdn.jsdelivr.net/gh/hydroakri/dnscrypt-proxy-blocklist@release/blocklist.txt",
+        "name": "Hagezi Pro",
+        "url": "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/wildcard/pro-onlydomains.txt",
+        "backup_url": "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/pro-onlydomains.txt",
         "priority": 10000
     }
 ]
